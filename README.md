@@ -78,12 +78,6 @@ function create_user($data) {
 
 ---
 
-This setup makes your API modular and frontend-friendly.
-
-I can also **add a few example endpoints (`projects`, `groups`, `endpoints`) in the same style** so your frontend team has something to start testing with.
-
-Do you want me to do that next?
-
-
 
 more info in example-endpoints.php
+and in documentation.html

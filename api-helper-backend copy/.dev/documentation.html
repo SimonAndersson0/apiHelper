@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>API Helper Documentation</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; }
+    h1 { color: #333; }
+    h2 { color: #0077cc; margin-top: 30px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 30px; background: #fff; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #0077cc; color: white; }
+    tr:nth-child(even){background-color: #f2f2f2;}
+    code { background: #eee; padding: 2px 4px; border-radius: 4px; }
+    pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<h1>API Helper Documentation</h1>
+<p>This documentation lists all available endpoints, their parameters, HTTP methods, and sample requests.</p>
+
+<h2>Projects</h2>
+<table>
+    <tr><th>Action</th><th>Method</th><th>Parameters</th><th>Description</th><th>Sample Request</th></tr>
+    <tr>
+        <td>list</td>
+        <td>GET</td>
+        <td>—</td>
+        <td>Retrieve all projects</td>
+        <td><code>GET ?endpoint=projects&action=list</code></td>
+    </tr>
+    <tr>
+        <td>add</td>
+        <td>POST</td>
+        <td>name (string, required)<br>description (string, optional)</td>
+        <td>Create a new project</td>
+        <td><pre>POST ?endpoint=projects&action=add
+{
+  "name": "My Project",
+  "description": "Optional description"
+}</pre></td>
+    </tr>
+</table>
+
+<h2>Groups</h2>
+<table>
+    <tr><th>Action</th><th>Method</th><th>Parameters</th><th>Description</th><th>Sample Request</th></tr>
+    <tr>
+        <td>list</td>
+        <td>GET</td>
+        <td>project_id (int, required)</td>
+        <td>List all groups for a project</td>
+        <td><code>GET ?endpoint=groups&action=list&project_id=1</code></td>
+    </tr>
+    <tr>
+        <td>add</td>
+        <td>POST</td>
+        <td>project_id (int, required)<br>name (string, required)<br>parent_id (int, optional)</td>
+        <td>Create a new group</td>
+        <td><pre>POST ?endpoint=groups&action=add
+{
+  "project_id": 1,
+  "name": "User Endpoints",
+  "parent_id": null
+}</pre></td>
+    </tr>
+</table>
+
+<h2>Endpoints</h2>
+<table>
+    <tr><th>Action</th><th>Method</th><th>Parameters</th><th>Description</th><th>Sample Request</th></tr>
+    <tr>
+        <td>list</td>
+        <td>GET</td>
+        <td>group_id (int, optional)</td>
+        <td>Retrieve endpoints for a group</td>
+        <td><code>GET ?endpoint=endpoints&action=list&group_id=1</code></td>
+    </tr>
+    <tr>
+        <td>add</td>
+        <td>POST</td>
+        <td>group_id (int, required)<br>title (string, required)<br>url (string, required)<br>method (string, required)<br>description (string, optional)</td>
+        <td>Create a new endpoint</td>
+        <td><pre>POST ?endpoint=endpoints&action=add
+{
+  "group_id": 1,
+  "title": "Create User",
+  "url": "/api/user/create",
+  "method": "POST",
+  "description": "Creates a new user"
+}</pre></td>
+    </tr>
+</table>
+
+<h2>Variations</h2>
+<table>
+    <tr><th>Action</th><th>Method</th><th>Parameters</th><th>Description</th><th>Sample Request</th></tr>
+    <tr>
+        <td>list</td>
+        <td>GET</td>
+        <td>endpoint_id (int, required)</td>
+        <td>List variations for an endpoint</td>
+        <td><code>GET ?endpoint=variations&action=list&endpoint_id=1</code></td>
+    </tr>
+    <tr>
+        <td>add</td>
+        <td>POST</td>
+        <td>endpoint_id (int, required)<br>title (string, required)<br>description (string, optional)</td>
+        <td>Create a variation for an endpoint</td>
+        <td><pre>POST ?endpoint=variations&action=add
+{
+  "endpoint_id": 1,
+  "title": "Optional Name Only",
+  "description": "Variation with only name parameter"
+}</pre></td>
+    </tr>
+</table>
+
+<h2>Parameters</h2>
+<table>
+    <tr><th>Action</th><th>Method</th><th>Parameters</th><th>Description</th><th>Sample Request</th></tr>
+    <tr>
+        <td>list</td>
+        <td>GET</td>
+        <td>variation_id (int, required)</td>
+        <td>Retrieve all parameters for a variation</td>
+        <td><code>GET ?endpoint=parameters&action=list&variation_id=1</code></td>
+    </tr>
+    <tr>
+        <td>add</td>
+        <td>POST</td>
+        <td>variation_id (int, required)<br>name (string, required)<br>type (string, required)<br>required (bool, optional)<br>description (string, optional)</td>
+        <td>Create a parameter for a variation</td>
+        <td><pre>POST ?endpoint=parameters&action=add
+{
+  "variation_id": 1,
+  "name": "username",
+  "type": "string",
+  "required": true,
+  "description": "User's username"
+}</pre></td>
+    </tr>
+</table>
+
+</body>
+</html>
