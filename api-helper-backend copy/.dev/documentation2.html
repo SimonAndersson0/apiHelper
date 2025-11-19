@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>API Helper Documentation</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; }
+    h1 { color: #333; }
+    h2 { color: #0077cc; margin-top: 30px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 30px; background: #fff; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #0077cc; color: white; }
+    tr:nth-child(even){background-color: #f2f2f2;}
+    code { background: #eee; padding: 2px 4px; border-radius: 4px; }
+    pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    button { padding: 5px 10px; margin-top: 5px; cursor: pointer; }
+    .response { background: #fff; border: 1px solid #ddd; padding: 10px; margin-top: 5px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>API Helper Documentation</h1>
+<p>This documentation lists all available endpoints with live testing buttons.</p>
+
+<h2>Projects</h2>
+<table>
+<tr><th>Action</th><th>Method</th><th>Parameters</th><th>Description</th><th>Test</th></tr>
+<tr>
+    <td>list</td>
+    <td>GET</td>
+    <td>—</td>
+    <td>Retrieve all projects</td>
+    <td>
+        <button onclick="testEndpoint('projects','GET')">Test</button>
+        <div class="response" id="projects-list"></div>
+    </td>
+</tr>
+<tr>
+    <td>add</td>
+    <td>POST</td>
+    <td>name, description</td>
+    <td>Create a new project</td>
+    <td>
+        <button onclick="testEndpoint('projects','POST',{name:'Test Project',description:'Demo'})">Test</button>
+        <div class="response" id="projects-add"></div>
+    </td>
+</tr>
+</table>
+
+<h2>Groups</h2>
+<table>
+<tr><th>Action</th><th>Method</th><th>Parameters</th><th>Description</th><th>Test</th></tr>
+<tr>
+    <td>list</td>
+    <td>GET</td>
+    <td>project_id</td>
+    <td>List all groups for a project</td>
+    <td>
+        <button onclick="testEndpoint('groups','GET',{project_id:1})">Test</button>
+        <div class="response" id="groups-list"></div>
+    </td>
+</tr>
+<tr>
+    <td>add</td>
+    <td>POST</td>
+    <td>project_id, name, parent_id</td>
+    <td>Create a new group</td>
+    <td>
+        <button onclick="testEndpoint('groups','POST',{project_id:1,name:'New Group',parent_id:null})">Test</button>
+        <div class="response" id="groups-add"></div>
+    </td>
+</tr>
+</table>
+
+<h2>Endpoints</h2>
+<table>
+<tr><th>Action</th><th>Method</th><th>Parameters</th><th>Description</th><th>Test</th></tr>
+<tr>
+    <td>list</td>
+    <td>GET</td>
+    <td>group_id</td>
+    <td>Retrieve endpoints for a group</td>
+    <td>
+        <button onclick="testEndpoint('endpoints','GET',{group_id:1})">Test</button>
+        <div class="response" id="endpoints-list"></div>
+    </td>
+</tr>
+</table>
+
+<h2>JavaScript for live testing</h2>
+<script>
+function testEndpoint(endpoint, method='GET', body=null) {
+    const targetId = endpoint + '-' + (body ? 'add' : 'list');
+    const display = document.getElementById(targetId);
+    display.textContent = 'Loading...';
+
+let url = `http://localhost:8080/apiHelper/api-helper-backend%20copy/api/index.php?endpoint=${endpoint}`;
+let options = { method };
+
+if(method === 'GET' && body) {
+    url += '&' + new URLSearchParams(body).toString();
+} else if(method === 'POST') {
+    options.headers = {'Content-Type':'application/json'};
+    options.body = JSON.stringify(body);
+}
+
+fetch(url, options)
+.then(res => res.json())
+.then(data => {
+    display.textContent = JSON.stringify(data, null, 2);
+})
+.catch(err => {
+    display.textContent = 'Error: ' + err;
+});
+
+} </script>
+
+</body>
+</html>
