@@ -1,0 +1,11 @@
+ive been thinking abit about how to continue to develop my apihelper ive decided that i will kind of merge my api helper and my documentation creator which is important so take note of it.
+but first i want to have my apisections/ my different endpoints calls to be in a seperate file or database 
+bit of an idea of what i want to store is
+i still want to keep the sections but i also want to be able to store multiple of the same calls with different bodies so that if ex api has 1req parameter and 1 optional i want to be able to keep a test for both of them but have them under a ex button kind of how my sectoins are but for every endpoint and variation
+since i want to kind of merge it with my documentation creator its important that i also can store 
+type(ex string or int), requried or not or maybe semi optional (ex its required that you have either name or id as a parameter ) and also a description for every parameter.
+i also need to have a description for the full call/endpoint and also store what the endpoint is and what method (ex post or get) and lastly a title to the endpoint/call, and maybe also if it have any dependancies on other calls.
+
+is their anything you think i missed in that?
+to make this ive been thinking what file or database i should use the ones ive used before are ini file and MySQL. ini file seems to be pretty annoying to store this match so a relationship database is probably better and easier but i might be wrong and am open to suggestions on how i should build this apihelper and file/database.
+if you know any better way than mysql or a better file for this i would very much like suggestions and also some comparisons to what is the actuall benefits
