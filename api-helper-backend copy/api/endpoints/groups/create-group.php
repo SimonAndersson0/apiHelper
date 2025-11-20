@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../classes/GroupHandler.php';
-require_once __DIR__ . '/../../helpers/Response.php';
+require_once __DIR__ . '/../../classes/group-handler.php';
+require_once __DIR__ . '/../../helpers/response.php';
 
 $handler = new GroupHandler();
 
@@ -17,7 +17,7 @@ foreach($reqparameter as $param){
 $name = $data['name'];
 $project_id = $data['project_id'];
 //optional parameters
-$parent_id=$input['parent_id'] ?? NULL; //default to empty string if not provided only needed for non required parameters
+$parent_id=$input['parent_id'] ?? NULL; 
 
 
 //method call

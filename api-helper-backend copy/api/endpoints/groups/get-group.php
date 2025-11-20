@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../classes/GroupHandler.php';
-require_once __DIR__ . '/../../helpers/Response.php';
+require_once __DIR__ . '/../../classes/group-handler.php';
+require_once __DIR__ . '/../../helpers/response.php';
 
 $handler = new GroupHandler();
 
