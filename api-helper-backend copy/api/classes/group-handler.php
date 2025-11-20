@@ -1,66 +1,75 @@
 <?php
-require_once __DIR__ . '/base-handler.php';
+require_once __DIR__ . '/BaseHandler.php';
+require_once __DIR__ . '/../helpers/Response.php';
 
 class GroupHandler extends BaseHandler {
 
-    public function listGroups($project_id = null) {
-        $sql = "SELECT * FROM endpoint_groups";
-        $params = [];
-        if ($project_id) { 
-            $sql .= " WHERE project_id=:pid"; 
-            $params[':pid'] = $project_id; 
-        }
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return Response::success("Groups loaded", $stmt->fetchAll());
-    }
-
-    public function getGroup($id) {
-        $stmt = $this->db->prepare("SELECT * FROM endpoint_groups WHERE id=:id");
-        $stmt->execute([':id'=>$id]);
-        return Response::success("Group loaded", $stmt->fetch());
-    }
-
     public function createGroup($project_id, $name, $parent_id = null) {
-        $stmt = $this->db->prepare("INSERT INTO endpoint_groups (project_id, name, parent_id) VALUES (:pid, :name, :parent)");
-        $stmt->execute([':pid'=>$project_id, ':name'=>$name, ':parent'=>$parent_id]);
-        return Response::success("Group created", ['id'=>$this->db->lastInsertId()]);
+        try {
+            $stmt = $this->db->prepare("INSERT INTO endpoint_groups (project_id, name, parent_id) VALUES (:project_id, :name, :parent_id)");
+            $stmt->execute([':project_id'=>$project_id, ':name'=>$name, ':parent_id'=>$parent_id]);
+            return Response::success("Group created", ['id'=>$this->db->lastInsertId()]);
+        } catch (PDOException $e) {
+            return Response::error("Database error: ".$e->getMessage());
+        }
     }
 
-    function editGroup($id, $project_id, $name = null, $parent_id = null) {
-
+    public function editGroup($id, $project_id, $name = null, $parent_id = null) {
         try {
-            // Start with required fields
-            $fields = ["project_id = :project_id"];
-            $params = [
-                ':id' => $id,
-                ':project_id' => $project_id
-            ];
-
-            // Optional fields
-            $optionalFields = ['name', 'parent_id'];
-            foreach ($optionalFields as $field) {
-                if ($field !== null || $field!=='') {
+            $fields = ['project_id = :project_id'];
+            $params = [':id'=>$id, ':project_id'=>$project_id];
+            $optionalFields = ['name','parent_id'];
+            foreach($optionalFields as $field){
+                if($$field !== null){
                     $fields[] = "$field = :$field";
                     $params[":$field"] = $$field;
                 }
             }
-
-            $sql = "UPDATE endpoint_groups SET " . implode(", ", $fields) . " WHERE id = :id";
+            $sql = "UPDATE endpoint_groups SET ".implode(", ", $fields)." WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
-
-            return Response::success("Group updated"); // important!
-        }
-
-        catch (PDOException $e) {
-            return Response::error("Database error: " . $e->getMessage());
+            return Response::success("Group updated");
+        } catch (PDOException $e) {
+            return Response::error("Database error: ".$e->getMessage());
         }
     }
 
     public function deleteGroup($id) {
-        $stmt = $this->db->prepare("DELETE FROM endpoint_groups WHERE id=:id");
-        $stmt->execute([':id'=>$id]);
-        return Response::success("Group deleted");
+        try {
+            $stmt = $this->db->prepare("DELETE FROM endpoint_groups WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            return Response::success("Group deleted");
+        } catch (PDOException $e) {
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function getGroup($id) {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM endpoint_groups WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            if(!$data) return Response::error("Group not found", [], 404);
+            return Response::success("Group loaded", $data);
+        } catch (PDOException $e) {
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function listGroups($project_id = null) {
+        try {
+            $sql = "SELECT * FROM endpoint_groups";
+            $params = [];
+            if($project_id !== null){
+                $sql .= " WHERE project_id = :project_id";
+                $params[':project_id'] = $project_id;
+            }
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return Response::success("Groups loaded", $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (PDOException $e) {
+            return Response::error("Database error: ".$e->getMessage());
+        }
     }
 }
+?>

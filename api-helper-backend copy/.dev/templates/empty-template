@@ -1,0 +1,406 @@
+<?php
+// classes/BaseHandler.php
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../helpers/Response.php';
+
+class BaseHandler {
+    protected $db;
+
+    public function __construct() {
+        try {
+            $this->db = Database::getInstance()->conn();
+        } catch (PDOException $e) {
+            Response::error("Database connection failed: " . $e->getMessage());
+        }
+    }
+
+    public function __destruct() {
+        $this->db = null;
+    }
+}
+?>
+
+<?php
+// classes/project-handler.php
+require_once __DIR__ . '/BaseHandler.php';
+
+class ProjectHandler extends BaseHandler {
+
+    public function createProject($name, $description = null) {
+        try {
+            $stmt = $this->db->prepare("INSERT INTO projects (name, description) VALUES (:name, :desc)");
+            $stmt->execute([':name'=>$name, ':desc'=>$description]);
+            return Response::success("Project created", ['id'=>$this->db->lastInsertId()]);
+        } catch (PDOException $e) {
+            return Response::error("Database error: " . $e->getMessage());
+        }
+    }
+
+    public function editProject($id, $name = null, $description = null) {
+        try {
+            $fields = [];
+            $params = [':id'=>$id];
+            $optionalFields = ['name', 'description'];
+            foreach($optionalFields as $field){
+                if($$field !== null){
+                    $fields[] = "$field = :$field";
+                    $params[":$field"] = $$field;
+                }
+            }
+
+            if(empty($fields)) return Response::error("No fields to update");
+
+            $sql = "UPDATE projects SET ".implode(", ", $fields)." WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            return Response::success("Project updated");
+        } catch (PDOException $e) {
+            return Response::error("Database error: " . $e->getMessage());
+        }
+    }
+
+    public function deleteProject($id) {
+        try {
+            $stmt = $this->db->prepare("DELETE FROM projects WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            return Response::success("Project deleted");
+        } catch (PDOException $e) {
+            return Response::error("Database error: " . $e->getMessage());
+        }
+    }
+
+    public function getProject($id) {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM projects WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            if(!$data) return Response::error("Project not found", [], 404);
+            return Response::success("Project loaded", $data);
+        } catch (PDOException $e) {
+            return Response::error("Database error: " . $e->getMessage());
+        }
+    }
+
+    public function listProjects() {
+        try {
+            $stmt = $this->db->query("SELECT * FROM projects ORDER BY name");
+            return Response::success("Projects loaded", $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (PDOException $e) {
+            return Response::error("Database error: " . $e->getMessage());
+        }
+    }
+}
+?>
+
+<?php
+// classes/group-handler.php
+require_once __DIR__ . '/BaseHandler.php';
+
+class GroupHandler extends BaseHandler {
+
+    public function createGroup($project_id, $name, $parent_id = null) {
+        try {
+            $stmt = $this->db->prepare("INSERT INTO endpoint_groups (project_id, name, parent_id) VALUES (:pid, :name, :parent)");
+            $stmt->execute([':pid'=>$project_id, ':name'=>$name, ':parent'=>$parent_id]);
+            return Response::success("Group created", ['id'=>$this->db->lastInsertId()]);
+        } catch(PDOException $e) {
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function editGroup($id, $project_id, $name = null, $parent_id = null) {
+        try {
+            $fields = ["project_id = :project_id"];
+            $params = [':id'=>$id, ':project_id'=>$project_id];
+            $optionalFields = ['name', 'parent_id'];
+            foreach($optionalFields as $field){
+                if($$field !== null){
+                    $fields[] = "$field = :$field";
+                    $params[":$field"] = $$field;
+                }
+            }
+
+            $sql = "UPDATE endpoint_groups SET ".implode(", ", $fields)." WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            return Response::success("Group updated");
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function deleteGroup($id){
+        try{
+            $stmt = $this->db->prepare("DELETE FROM endpoint_groups WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            return Response::success("Group deleted");
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function getGroup($id){
+        try{
+            $stmt = $this->db->prepare("SELECT * FROM endpoint_groups WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            if(!$data) return Response::error("Group not found", [], 404);
+            return Response::success("Group loaded", $data);
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function listGroups($project_id = null){
+        try{
+            $sql = "SELECT * FROM endpoint_groups";
+            $params = [];
+            if($project_id !== null){
+                $sql .= " WHERE project_id = :pid";
+                $params[':pid'] = $project_id;
+            }
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return Response::success("Groups loaded", $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+}
+?>
+
+<?php
+// classes/endpoint-handler.php
+require_once __DIR__ . '/BaseHandler.php';
+
+class EndpointHandler extends BaseHandler {
+
+    public function createEndpoint($group_id, $title, $url, $method, $description = null){
+        try{
+            $stmt = $this->db->prepare("INSERT INTO endpoints (group_id, title, url, method, description) VALUES (:gid,:title,:url,:method,:desc)");
+            $stmt->execute([':gid'=>$group_id, ':title'=>$title, ':url'=>$url, ':method'=>strtoupper($method), ':desc'=>$description]);
+            return Response::success("Endpoint created", ['id'=>$this->db->lastInsertId()]);
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function editEndpoint($id, $group_id, $title = null, $url = null, $method = null, $description = null){
+        try{
+            $fields = ["group_id = :group_id"];
+            $params = [':id'=>$id, ':group_id'=>$group_id];
+            $optionalFields = ['title','url','method','description'];
+            foreach($optionalFields as $field){
+                if($$field !== null){
+                    $fields[] = "$field = :$field";
+                    $params[":$field"] = ($field==='method') ? strtoupper($$field) : $$field;
+                }
+            }
+
+            $sql = "UPDATE endpoints SET ".implode(", ", $fields)." WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            return Response::success("Endpoint updated");
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function deleteEndpoint($id){
+        try{
+            $stmt = $this->db->prepare("DELETE FROM endpoints WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            return Response::success("Endpoint deleted");
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function getEndpoint($id){
+        try{
+            $stmt = $this->db->prepare("SELECT * FROM endpoints WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            if(!$data) return Response::error("Endpoint not found", [], 404);
+            return Response::success("Endpoint loaded", $data);
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function listEndpoints($group_id = null){
+        try{
+            $sql = "SELECT * FROM endpoints";
+            $params = [];
+            if($group_id !== null){
+                $sql .= " WHERE group_id = :gid";
+                $params[':gid']=$group_id;
+            }
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return Response::success("Endpoints loaded", $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+}
+?>
+
+<?php
+// classes/variation-handler.php
+require_once __DIR__ . '/BaseHandler.php';
+
+class VariationHandler extends BaseHandler {
+
+    public function createVariation($endpoint_id, $title, $description = null){
+        try{
+            $stmt = $this->db->prepare("INSERT INTO variations (endpoint_id, title, description) VALUES (:eid,:title,:desc)");
+            $stmt->execute([':eid'=>$endpoint_id, ':title'=>$title, ':desc'=>$description]);
+            return Response::success("Variation created", ['id'=>$this->db->lastInsertId()]);
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function editVariation($id, $endpoint_id, $title = null, $description = null){
+        try{
+            $fields = ["endpoint_id = :endpoint_id"];
+            $params = [':id'=>$id, ':endpoint_id'=>$endpoint_id];
+            $optionalFields = ['title','description'];
+            foreach($optionalFields as $field){
+                if($$field !== null){
+                    $fields[] = "$field = :$field";
+                    $params[":$field"] = $$field;
+                }
+            }
+
+            $sql = "UPDATE variations SET ".implode(", ", $fields)." WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            return Response::success("Variation updated");
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function deleteVariation($id){
+        try{
+            $stmt = $this->db->prepare("DELETE FROM variations WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            return Response::success("Variation deleted");
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function getVariation($id){
+        try{
+            $stmt = $this->db->prepare("SELECT * FROM variations WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            if(!$data) return Response::error("Variation not found", [], 404);
+            return Response::success("Variation loaded", $data);
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function listVariations($endpoint_id = null){
+        try{
+            $sql = "SELECT * FROM variations";
+            $params = [];
+            if($endpoint_id !== null){
+                $sql .= " WHERE endpoint_id = :eid";
+                $params[':eid'] = $endpoint_id;
+            }
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return Response::success("Variations loaded", $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+}
+?>
+
+<?php
+// classes/parameter-handler.php
+require_once __DIR__ . '/BaseHandler.php';
+
+class ParameterHandler extends BaseHandler {
+
+    public function createParameter($variation_id, $name, $type, $required = 0, $description = null){
+        try{
+            $stmt = $this->db->prepare("INSERT INTO parameters (variation_id, name, type, required, description) VALUES (:vid,:name,:type,:req,:desc)");
+            $stmt->execute([':vid'=>$variation_id, ':name'=>$name, ':type'=>$type, ':req'=>$required, ':desc'=>$description]);
+            return Response::success("Parameter created", ['id'=>$this->db->lastInsertId()]);
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function editParameter($id, $variation_id, $name = null, $type = null, $required = null, $description = null){
+        try{
+            $fields = ["variation_id = :variation_id"];
+            $params = [':id'=>$id, ':variation_id'=>$variation_id];
+            $optionalFields = ['name','type','required','description'];
+            foreach($optionalFields as $field){
+                if($$field !== null){
+                    $fields[] = "$field = :$field";
+                    $params[":$field"] = $$field;
+                }
+            }
+
+            $sql = "UPDATE parameters SET ".implode(", ", $fields)." WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            return Response::success("Parameter updated");
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function deleteParameter($id){
+        try{
+            $stmt = $this->db->prepare("DELETE FROM parameters WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            return Response::success("Parameter deleted");
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function getParameter($id){
+        try{
+            $stmt = $this->db->prepare("SELECT * FROM parameters WHERE id = :id");
+            $stmt->execute([':id'=>$id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            if(!$data) return Response::error("Parameter not found", [], 404);
+            return Response::success("Parameter loaded", $data);
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+
+    public function listParameters($variation_id = null){
+        try{
+            $sql = "SELECT * FROM parameters";
+            $params = [];
+            if($variation_id !== null){
+                $sql .= " WHERE variation_id = :vid";
+                $params[':vid'] = $variation_id;
+            }
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return Response::success("Parameters loaded", $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch(PDOException $e){
+            return Response::error("Database error: ".$e->getMessage());
+        }
+    }
+}
+?>
