@@ -8,4 +8,9 @@ class BaseHandler {
     public function __construct() {
         $this->db = Database::getInstance()->conn();
     }
+
+    // Clean up DB connection when the object is destroyed
+    public function __destruct() {
+        $this->db = null;
+    }
 }
