@@ -17,7 +17,7 @@ foreach($reqparameter as $param){
 $name = $data['name'];
 $project_id = $data['project_id'];
 //optional parameters
-$parent_id=$input['parent_id'] ?? NULL; 
+$parent_id=$data['parent_id'] ?? NULL; 
 
 
 //method call

@@ -17,14 +17,14 @@ foreach($reqparameter as $param){
 $id = $data['id'];
 
 //optional parameters
-$group_id=$input['group_id'] ?? NULL; 
-$title=$input['title'] ?? NULL; 
-$url=$input['url'] ?? NULL; 
-$method=$input['method'] ?? NULL; 
-$description=$input['description'] ?? NULL; 
+$group_id=$data['group_id'] ?? NULL; 
+$title=$data['title'] ?? NULL; 
+$url=$data['url'] ?? NULL; 
+$method=$data['method'] ?? NULL; 
+$description=$data['description'] ?? NULL; 
 
 
 //method call
-echo $handler->editEndpoint($id, $group_id = null, $title = null, $url = null, $method = null, $description = null);
+echo $handler->editEndpoint($id, $group_id, $title, $url, $method, $description);
 
 ?>

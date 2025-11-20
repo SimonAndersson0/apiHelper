@@ -1,76 +1,125 @@
 <?php
-require_once __DIR__ . '/BaseHandler.php';
+// classes/variations-handler.php
+require_once __DIR__ . '/base-handler.php';
 require_once __DIR__ . '/../helpers/Response.php';
 
-class VariationHandler extends BaseHandler {
+class VariationsHandler extends BaseHandler {
 
-    public function createVariation($endpoint_id, $title, $description = null) {
+    public function createVariation($endpoint_id, $title, $description = null, $parameter_values = []) {
         try {
-            $stmt = $this->db->prepare("INSERT INTO variations (endpoint_id, title, description) VALUES (:endpoint_id, :title, :desc)");
-            $stmt->execute([':endpoint_id'=>$endpoint_id, ':title'=>$title, ':desc'=>$description]);
-            return Response::success("Variation created", ['id'=>$this->db->lastInsertId()]);
+            // Create variation
+            $stmt = $this->db->prepare("
+                INSERT INTO variations (endpoint_id, title, description) 
+                VALUES (:endpoint_id, :title, :description)
+            ");
+            $stmt->execute([
+                ':endpoint_id' => $endpoint_id,
+                ':title' => $title,
+                ':description' => $description
+            ]);
+
+            $variation_id = $this->db->lastInsertId();
+
+            // Insert variation parameter values if provided
+            foreach ($parameter_values as $param_id => $valueData) {
+                $stmt2 = $this->db->prepare("
+                    INSERT INTO variation_parameters (variation_id, parameter_id, value, value_type)
+                    VALUES (:vid, :pid, :value, :value_type)
+                ");
+                $stmt2->execute([
+                    ':vid' => $variation_id,
+                    ':pid' => $param_id,
+                    ':value' => $valueData['value'] ?? '',
+                    ':value_type' => $valueData['type'] ?? 'string'
+                ]);
+            }
+
+            return Response::success("Variation created", ['id' => $variation_id]);
+
         } catch (PDOException $e) {
-            return Response::error("Database error: ".$e->getMessage());
+            return Response::error("Database error: " . $e->getMessage());
         }
     }
 
-    public function editVariation($id, $endpoint_id = null, $title = null, $description = null) {
+    public function editVariation($id, $title = null, $description = null, $parameter_values = []) {
         try {
             $fields = [];
-            $params = [':id'=>$id];
-            $optionalFields = ['endpoint_id','title','description'];
-            foreach($optionalFields as $field){
-                if($$field !== null){
+            $params = [':id' => $id];
+
+            $optionalFields = ['title', 'description'];
+            foreach ($optionalFields as $field) {
+                if ($$field !== null) {
                     $fields[] = "$field = :$field";
                     $params[":$field"] = $$field;
                 }
             }
-            if(empty($fields)) return Response::error("No fields to update");
-            $sql = "UPDATE variations SET ".implode(", ", $fields)." WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
+
+            if (!empty($fields)) {
+                $sql = "UPDATE variations SET " . implode(", ", $fields) . " WHERE id = :id";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute($params);
+            }
+
+            // Update variation parameter values
+            foreach ($parameter_values as $param_id => $valueData) {
+                $stmt2 = $this->db->prepare("
+                    UPDATE variation_parameters
+                    SET value = :value, value_type = :value_type
+                    WHERE variation_id = :vid AND parameter_id = :pid
+                ");
+                $stmt2->execute([
+                    ':vid' => $id,
+                    ':pid' => $param_id,
+                    ':value' => $valueData['value'] ?? '',
+                    ':value_type' => $valueData['type'] ?? 'string'
+                ]);
+            }
+
             return Response::success("Variation updated");
+
         } catch (PDOException $e) {
-            return Response::error("Database error: ".$e->getMessage());
+            return Response::error("Database error: " . $e->getMessage());
         }
     }
 
     public function deleteVariation($id) {
         try {
+            // Delete variation parameters first
+            $stmt = $this->db->prepare("DELETE FROM variation_parameters WHERE variation_id = :vid");
+            $stmt->execute([':vid' => $id]);
+
+            // Delete variation
             $stmt = $this->db->prepare("DELETE FROM variations WHERE id = :id");
-            $stmt->execute([':id'=>$id]);
+            $stmt->execute([':id' => $id]);
+
             return Response::success("Variation deleted");
         } catch (PDOException $e) {
-            return Response::error("Database error: ".$e->getMessage());
+            return Response::error("Database error: " . $e->getMessage());
         }
     }
 
-    public function getVariation($id) {
+    public function getVariationsByEndpoint($endpoint_id) {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM variations WHERE id = :id");
-            $stmt->execute([':id'=>$id]);
-            $data = $stmt->fetch(PDO::FETCH_ASSOC);
-            if(!$data) return Response::error("Variation not found", [], 404);
-            return Response::success("Variation loaded", $data);
-        } catch (PDOException $e) {
-            return Response::error("Database error: ".$e->getMessage());
-        }
-    }
+            $stmt = $this->db->prepare("SELECT * FROM variations WHERE endpoint_id = :eid");
+            $stmt->execute([':eid' => $endpoint_id]);
+            $variations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    public function listVariations($endpoint_id = null) {
-        try {
-            $sql = "SELECT * FROM variations";
-            $params = [];
-            if($endpoint_id !== null){
-                $sql .= " WHERE endpoint_id = :endpoint_id";
-                $params[':endpoint_id'] = $endpoint_id;
+            // Include parameter values
+            foreach ($variations as &$var) {
+                $stmt2 = $this->db->prepare("
+                    SELECT vp.*, p.name
+                    FROM variation_parameters vp
+                    JOIN parameters p ON vp.parameter_id = p.id
+                    WHERE vp.variation_id = :vid
+                ");
+                $stmt2->execute([':vid' => $var['id']]);
+                $var['parameters'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
             }
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
-            return Response::success("Variations loaded", $stmt->fetchAll(PDO::FETCH_ASSOC));
+
+            return Response::success("Variations loaded", $variations);
+
         } catch (PDOException $e) {
-            return Response::error("Database error: ".$e->getMessage());
+            return Response::error("Database error: " . $e->getMessage());
         }
     }
 }
-?>

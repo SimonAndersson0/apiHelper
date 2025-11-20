@@ -19,10 +19,10 @@ $title = $data['title'];
 $url = $data['url'];
 $method = $data['method'];
 //optional parameters
-$description=$input['description'] ?? NULL; 
+$description=$data['description'] ?? NULL; 
 
 
 //method call
-echo $handler->createEndpoint($group_id, $title, $url, $method, $description = null);
+echo $handler->createEndpoint($group_id, $title, $url, $method, $description);
 
 ?>

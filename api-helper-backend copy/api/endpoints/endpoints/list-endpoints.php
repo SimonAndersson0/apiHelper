@@ -22,6 +22,6 @@ foreach($reqparameter as $param){
 $group_id=$data[$group_id] ?? NULL
 
 //method call
-echo $handler->listEndpoints($group_id = null);
+echo $handler->listEndpoints($group_id);
 
 ?>

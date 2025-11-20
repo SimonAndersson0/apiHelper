@@ -2,10 +2,10 @@
 require_once __DIR__ . '/../../classes/parameter-handler.php';
 require_once __DIR__ . '/../../helpers/response.php';
 
-$handler = new GroupHandler();
+$handler = new ParametersHandler();
 
 //check required parameters         MARK:parameters
-$reqparameter=['name','project_id'];
+$reqparameter=['endpoint_id','name','type','required'];
 foreach($reqparameter as $param){
     if(!isset($data[$param])){
         Response::error("Missing parameter: ".$param);
@@ -14,13 +14,15 @@ foreach($reqparameter as $param){
 //set all parameters 
 
 //required parameters
+$endpoint_id = $data['endpoint_id'];
 $name = $data['name'];
-$project_id = $data['project_id'];
+$type = $data['type'];
+$required = $data['required']; //true or false should work i think
 //optional parameters
-$parent_id=$input['parent_id'] ?? NULL; 
+$description=$data['description'] ?? NULL; 
 
 
 //method call
-echo $handler->createGroup($project_id, $name, $parent_id);
+echo $handler->createParameter($endpoint_id, $name, $type, $required, $description = null);
 
 ?>

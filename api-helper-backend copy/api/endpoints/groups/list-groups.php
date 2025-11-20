@@ -23,6 +23,6 @@ $projectId = $data['project_id'] ?? NULL;
 
 
 //method call
-echo $handler->listGroups($project_id = null);
+echo $handler->listGroups($project_id);
 
 ?>
