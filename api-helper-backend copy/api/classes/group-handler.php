@@ -12,30 +12,55 @@ class GroupHandler extends BaseHandler {
         }
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        Response::success("Groups loaded", $stmt->fetchAll());
+        return Response::success("Groups loaded", $stmt->fetchAll());
     }
 
     public function getGroup($id) {
         $stmt = $this->db->prepare("SELECT * FROM endpoint_groups WHERE id=:id");
         $stmt->execute([':id'=>$id]);
-        Response::success("Group loaded", $stmt->fetch());
+        return Response::success("Group loaded", $stmt->fetch());
     }
 
     public function createGroup($project_id, $name, $parent_id = null) {
         $stmt = $this->db->prepare("INSERT INTO endpoint_groups (project_id, name, parent_id) VALUES (:pid, :name, :parent)");
         $stmt->execute([':pid'=>$project_id, ':name'=>$name, ':parent'=>$parent_id]);
-        Response::success("Group created", ['id'=>$this->db->lastInsertId()]);
+        return Response::success("Group created", ['id'=>$this->db->lastInsertId()]);
     }
 
-    public function editGroup($id, $project_id = null, $name = null, $parent_id = null) {
-        $stmt = $this->db->prepare("UPDATE endpoint_groups SET project_id=:pid, name=:name, parent_id=:parent WHERE id=:id");
-        $stmt->execute([':id'=>$id, ':pid'=>$project_id, ':name'=>$name, ':parent'=>$parent_id]);
-        Response::success("Group updated");
+    function editGroup($id, $project_id, $name = null, $parent_id = null) {
+
+        try {
+            // Start with required fields
+            $fields = ["project_id = :project_id"];
+            $params = [
+                ':id' => $id,
+                ':project_id' => $project_id
+            ];
+
+            // Optional fields
+            $optionalFields = ['name', 'parent_id'];
+            foreach ($optionalFields as $field) {
+                if ($field !== null || $field!=='') {
+                    $fields[] = "$field = :$field";
+                    $params[":$field"] = $$field;
+                }
+            }
+
+            $sql = "UPDATE endpoint_groups SET " . implode(", ", $fields) . " WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            return Response::success("Group updated"); // important!
+        }
+
+        catch (PDOException $e) {
+            return Response::error("Database error: " . $e->getMessage());
+        }
     }
 
     public function deleteGroup($id) {
         $stmt = $this->db->prepare("DELETE FROM endpoint_groups WHERE id=:id");
         $stmt->execute([':id'=>$id]);
-        Response::success("Group deleted");
+        return Response::success("Group deleted");
     }
 }

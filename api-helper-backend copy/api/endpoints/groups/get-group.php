@@ -4,10 +4,23 @@ require_once __DIR__ . '/../../helpers/Response.php';
 
 $handler = new GroupHandler();
 
-$id = $data['id'] ?? null;
-
-if (!$id) {
-    Response::error('Group ID is required');
+//check required parameters         MARK:parameters
+$reqparameter=['id'];
+foreach($reqparameter as $param){
+    if(!isset($data[$param])){
+        Response::error("Missing parameter: ".$param);
+    }
 }
+//set all parameters 
 
+//required parameters
+$id = $data['id']
+
+//optional parameters
+
+
+
+//method call
 echo $handler->getGroup($id);
+
+?>
