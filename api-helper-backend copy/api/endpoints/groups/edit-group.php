@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../helpers/Response.php';
 $handler = new GroupHandler();
 
 //check required parameters         MARK:parameters
-$reqparameter=['title','project_id'];
+$reqparameter=['id','project_id'];
 foreach($reqparameter as $param){
     if(!isset($data[$param])){
         Response::error("Missing parameter: ".$param);
@@ -14,13 +14,14 @@ foreach($reqparameter as $param){
 //set all parameters 
 
 //required parameters
-$title = $data['title'];
+$id = $data['id'];
 $projectId = $data['project_id'];
 //optional parameters
-$content=$input['content'] ?? ''; //default to empty string if not provided only needed for non required parameters
+$name=$input['name'] ?? NULL;
+$parent_id=$input['parent_id'] ?? NULL;
 
 
 //method call
-echo $handler->editGroup($id, $project_id = null, $name = null, $parent_id = null);
+echo $handler->editGroup($id, $project_id, $name, $parent_id );
 
 ?>
