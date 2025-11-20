@@ -23,6 +23,6 @@ $description=$data['description'] ?? NULL;
 
 
 //method call
-echo $handler->createParameter($endpoint_id, $name, $type, $required, $description = null);
+echo $handler->createParameter($endpoint_id, $name, $type, $required, $description);
 
 ?>
