@@ -1,13 +1,18 @@
 <?php
-require_once __DIR__ . '/helpers/response.php';
+require_once __DIR__ . '/helpers/Response.php';
 header('Content-Type: application/json');
 
+// Get endpoint from query parameter, e.g. ?endpoint=groups/create-group
 $endpoint = $_GET['endpoint'] ?? '';
 if (!$endpoint) Response::error('No endpoint specified', 400);
 
-$endpointFile = __DIR__ . '/endpoints/' . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $endpoint) . '.php';
+// Convert endpoint to lowercase and replace spaces/backslashes with hyphens / directory separator
+$endpointPath = strtolower(str_replace(['/', '\\', ' '], DIRECTORY_SEPARATOR, $endpoint));
+$endpointFile = __DIR__ . '/endpoints/' . $endpointPath . '.php';
+
 if (!file_exists($endpointFile)) Response::error('Endpoint not found', 404);
 
+// Detect request method and parse input
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 if ($requestMethod === 'POST') {
     $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
@@ -18,8 +23,9 @@ if ($requestMethod === 'POST') {
     $data = $_GET;
 }
 
+// Include endpoint file and execute
 try {
     require $endpointFile;
 } catch (Exception $e) {
-    Response::error($e->getMessage(), 500);
+    Response::error("Server error: " . $e->getMessage(), 500);
 }
